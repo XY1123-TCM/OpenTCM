@@ -16,7 +16,7 @@ The project follows a front-end/back-end architecture:
     * `Flask`: Serves as the web framework, providing API endpoints.
     * `tcm_rag_system.py`: Contains the core logic:
         * `TCMKnowledgeGraph`: Construction, management, and querying of the knowledge graph.
-        * `GraphRAG`: Implements the RAG pipeline, including interaction with the Kimi API, prompt construction, knowledge retrieval, and answer synthesis.
+        * `GraphRAG`: Implements the GraphRAG pipeline, including interaction with the Kimi API, prompt construction, knowledge retrieval, and answer synthesis.
         * `TCMGraphRAGApp`: Encapsulates the application logic for API calls.
     * `requests`: Communicates with external LLM APIs (e.g., Moonshot Kimi).
     * `python-dotenv`: Manages environment variables (like API keys).
