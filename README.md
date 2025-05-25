@@ -35,7 +35,7 @@ The project follows a front-end/back-end architecture:
 
 ## Project Structure
 
-/TCM_Chat_Web_App
+
 ├── /data       
 │   ├── TCMKG.py      
 │   └── data.csv    #add your dataset here
@@ -51,6 +51,7 @@ The project follows a front-end/back-end architecture:
 │   └── style.css     
 └── /images
 └── opentcm_logo.png
+└── readme.md
 
 
 
