@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>欢迎使用 OpenTCM</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="welcome-container">
+        <img src="{{ url_for('static', filename='images/opentcm_logo.png') }}" alt="OpenTCM Logo" class="logo">
+        <h1>OpenTCM 中医智能助手</h1>
+        <p>基于知识图谱与大语言模型的中医药问答与分析平台</p>
+        <div class="navigation-buttons">
+            <button onclick="location.href='{{ url_for('chat_ui_page') }}'">开始聊天</button>
+        </div>
+    </div>
+    <footer>
+        <p>&copy; 2024-2025 OpenTCM 项目. 保留所有权利.</p>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenTCM 聊天机器人</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="chat-page-container">
+        <header class="chat-page-header">
+            <img src="{{ url_for('static', filename='images/opentcm_logo.png') }}" alt="OpenTCM Logo" class="chat-logo">
+            <h1>OpenTCM 智能问答</h1>
+            <button onclick="location.href='{{ url_for('welcome') }}'" class="back-button">返回首页</button>
+        </header>
+
+        <div class="chat-container">
+            <div class="chat-messages" id="chatMessages">
+                <div class="message assistant-message">
+                    您好！我是 OpenTCM 助手，很高兴为您提供中医药相关问题的解答。请问有什么可以帮您的吗？
+                </div>
+            </div>
+            <div class="chat-input-area">
+                <textarea id="userInput" placeholder="在此输入您的问题..." rows="3"></textarea>
+                <button id="sendButton">发送</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const chatMessages = document.getElementById('chatMessages');
+        const userInput = document.getElementById('userInput');
+        const sendButton = document.getElementById('sendButton');
+
+        function escapeHtml(unsafe) {
+            if (typeof unsafe !== 'string') {
+                return '';
+            }
+            return unsafe
+                 .replace(/&/g, "&amp;")
+                 .replace(/</g, "&lt;")
+                 .replace(/>/g, "&gt;")
+                 .replace(/"/g, "&quot;")
+                 .replace(/'/g, "&#039;");
+        }
+
+        function appendMessage(text, type, isHtml = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', type);
+            
+            if (isHtml) {
+                // 如果确认内容是安全的HTML (例如，来自Markdown转换)
+                // 注意：直接设置innerHTML需要确保来源可靠，防止XSS
+                // messageDiv.innerHTML = text; // 假设text是安全的HTML
+                // 为简单起见，并且如果Kimi返回的是纯文本，还是用textContent
+                 messageDiv.textContent = text; // 默认还是纯文本
+            } else {
+                 messageDiv.textContent = text;
+            }
+            
+            // 处理换行符：将 \n 替换为 <br>
+            // 这应该在 textContent 设置之后，或者如果用 innerHTML，则在设置前处理好字符串
+            messageDiv.innerHTML = messageDiv.innerHTML.replace(/\n/g, '<br>');
+
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function showLoading(isLoading) {
+            let loadingDiv = document.getElementById('loadingIndicator');
+            if (isLoading) {
+                if (!loadingDiv) {
+                    loadingDiv = document.createElement('div');
+                    loadingDiv.id = 'loadingIndicator';
+                    loadingDiv.classList.add('message', 'loading-message');
+                    loadingDiv.textContent = '正在思考中，请稍候...';
+                    chatMessages.appendChild(loadingDiv);
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                }
+            } else {
+                if (loadingDiv) {
+                    loadingDiv.remove();
+                }
+            }
+        }
+
+        async function sendMessage() {
+            const query = userInput.value.trim();
+            if (!query) return;
+
+            appendMessage(query, 'user-message');
+            userInput.value = ''; // 清空输入框
+            userInput.disabled = true; // 禁用输入框
+            sendButton.disabled = true; // 禁用发送按钮
+            showLoading(true);
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ query: query }),
+                });
+
+                showLoading(false);
+
+                if (!response.ok) {
+                    let errorMsg = `服务器响应错误: ${response.status}`;
+                    try {
+                        const errorData = await response.json();
+                        errorMsg = errorData.error || JSON.stringify(errorData);
+                    } catch (e) {
+                        // Ignore if response is not JSON
+                    }
+                    appendMessage(`抱歉，出错了: ${errorMsg}`, 'error-message');
+                    return;
+                }
+
+                const data = await response.json();
+                if (data.response) {
+                    appendMessage(data.response, 'assistant-message');
+                } else if (data.error) {
+                    appendMessage(`出现错误: ${data.error}`, 'error-message');
+                } else {
+                    appendMessage('收到未知格式的响应。', 'error-message');
+                }
+
+            } catch (error) {
+                showLoading(false);
+                console.error('发送消息失败:', error);
+                appendMessage('网络连接失败或服务器无响应，请检查您的网络连接或稍后再试。', 'error-message');
+            } finally {
+                userInput.disabled = false; // 重新启用输入框
+                sendButton.disabled = false; // 重新启用发送按钮
+                userInput.focus();
+            }
+        }
+
+        sendButton.addEventListener('click', sendMessage);
+        userInput.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter' && !event.shiftKey) { // Shift+Enter 换行，Enter 发送
+                event.preventDefault(); // 阻止默认的Enter换行行为
+                sendMessage();
+            }
+        });
+        userInput.focus(); // 页面加载后自动聚焦输入框
+    </script>
+</body>
+</html>
