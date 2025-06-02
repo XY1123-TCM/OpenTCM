@@ -3,20 +3,142 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>欢迎使用 OpenTCM</title>
+    <title>OpenTCM</title>
+    <meta name="description" content="OpenTCM 中医智能问答助手，为您提供专业的中医知识咨询服务">
+    <meta name="keywords" content="中医,TCM,中医问答,智能助手,中医知识">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/OpenTCM_favicon.png') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 </head>
 <body>
-    <div class="welcome-container">
-        <img src="{{ url_for('static', filename='images/opentcm_logo.png') }}" alt="OpenTCM Logo" class="logo">
-        <h1>OpenTCM 中医智能助手</h1>
-        <p>基于知识图谱与大语言模型的中医药问答与分析平台</p>
-        <div class="navigation-buttons">
-            <button onclick="location.href='{{ url_for('chat_ui_page') }}'">开始聊天</button>
+    <!-- 站点顶栏 -->
+    <div class="site-top-bar">
+        <img src="{{ url_for('static', filename='images/OpenTCM_site_logo.png') }}" 
+             alt="OpenTCM Logo" 
+             class="site-top-logo">
+        <span class="site-top-name">OpenTCM</span>
+    </div>
+
+    <!-- 欢迎页面主体 -->
+    <div class="welcome-page-container">
+        <div class="homepage-content">
+            <div class="logo-container">
+                <img src="{{ url_for('static', filename='images/OpenTCM.png') }}" 
+                     alt="OpenTCM 中医智能问答助手" 
+                     class="welcome-logo">
+            </div>
+            
+            <!-- 欢迎信息 -->
+            <div class="welcome-info">
+                <h1 style="color: rgba(255,255,255,0.95); font-size: 2.2em; font-weight: 700; margin-bottom: 20px; text-shadow: 0 4px 8px rgba(0,0,0,0.2);">
+                    中医智能问答助手
+                </h1>
+                <p style="color: rgba(255,255,255,0.85); font-size: 1.15em; line-height: 1.8; margin-bottom: 40px; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    融合传统中医智慧与现代AI技术<br>
+                    为您提供专业、准确的中医知识咨询服务
+                </p>
+            </div>
+            
+            <!-- 特色功能展示 -->
+            <div class="features-preview" style="display: flex; justify-content: center; gap: 30px; margin-bottom: 50px; flex-wrap: wrap;">
+                <div class="feature-item" style="background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); border-radius: 16px; padding: 20px; width: 140px; text-align: center; border: 1px solid rgba(255,255,255,0.2);">
+                    <div style="font-size: 2.5em; margin-bottom: 10px;">🌿</div>
+                    <div style="color: rgba(255,255,255,0.9); font-size: 0.9em; font-weight: 500;">中药知识</div>
+                </div>
+                <div class="feature-item" style="background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); border-radius: 16px; padding: 20px; width: 140px; text-align: center; border: 1px solid rgba(255,255,255,0.2);">
+                    <div style="font-size: 2.5em; margin-bottom: 10px;">🏥</div>
+                    <div style="color: rgba(255,255,255,0.9); font-size: 0.9em; font-weight: 500;">疾病诊治</div>
+                </div>
+                <div class="feature-item" style="background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); border-radius: 16px; padding: 20px; width: 140px; text-align: center; border: 1px solid rgba(255,255,255,0.2);">
+                    <div style="font-size: 2.5em; margin-bottom: 10px;">⚖️</div>
+                    <div style="color: rgba(255,255,255,0.9); font-size: 0.9em; font-weight: 500;">养生保健</div>
+                </div>
+            </div>
+            
+            <!-- 开始聊天按钮 -->
+            <button onclick="location.href='{{ url_for('chat_ui_page') }}'" 
+                    class="chat-now-button"
+                    aria-label="开始与OpenTCM智能助手对话">
+                开始咨询 →
+            </button>
+            
+            <!-- 温馨提示 -->
+            <div class="welcome-tip" style="margin-top: 40px; padding: 20px; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border-radius: 16px; border: 1px solid rgba(255,255,255,0.2);">
+                <p style="color: rgba(255,255,255,0.8); font-size: 0.9em; line-height: 1.6; margin: 0;">
+                    💡 <strong>温馨提示：</strong>本系统提供中医知识参考，不能替代专业医疗建议。<br>
+                    如有健康问题，请及时咨询专业医生。
+                </p>
+            </div>
         </div>
     </div>
-    <footer>
-        <p>&copy; 2024-2025 OpenTCM 项目. 保留所有权利.</p>
+
+    <!-- 页脚 -->
+    <footer class="welcome-footer">
+        <p style="font-weight: 500;">&copy; 2024-2025 OpenTCM. All rights reserved.</p>
+        <p style="opacity: 0.8;">Disclaimer: OpenTCM provides TCM knowledge. Consult a healthcare provider for medical advice.</p>
     </footer>
-</body>
-</html>
+
+    <!-- 添加一些交互动画脚本 -->
+    <script>
+        // 页面加载动画
+        document.addEventListener('DOMContentLoaded', function() {
+            const features = document.querySelectorAll('.feature-item');
+            features.forEach((feature, index) => {
+                feature.style.opacity = '0';
+                feature.style.transform = 'translateY(20px)';
+                feature.style.transition = 'all 0.6s ease';
+                
+                setTimeout(() => {
+                    feature.style.opacity = '1';
+                    feature.style.transform = 'translateY(0)';
+                }, 300 + index * 150);
+            });
+
+            // 为特色功能添加悬停效果
+            features.forEach(feature => {
+                feature.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-5px) scale(1.05)';
+                    this.style.boxShadow = '0 10px 25px rgba(0,0,0,0.2)';
+                });
+                
+                feature.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0) scale(1)';
+                    this.style.boxShadow = 'none';
+                });
+            });
+        });
+
+        // 按钮点击动画
+        document.querySelector('.chat-now-button').addEventListener('click', function(e) {
+            const button = e.target;
+            const ripple = document.createElement('span');
+            
+            ripple.style.position = 'absolute';
+            ripple.style.borderRadius = '50%';
+            ripple.style.background = 'rgba(255,255,255,0.6)';
+            ripple.style.transform = 'scale(0)';
+            ripple.style.animation = 'ripple 0.6s linear';
+            ripple.style.left = '50%';
+            ripple.style.top = '50%';
+            ripple.style.width = '100px';
+            ripple.style.height = '100px';
+            ripple.style.marginLeft = '-50px';
+            ripple.style.marginTop = '-50px';
+            
+            button.appendChild(ripple);
+            
+            setTimeout(() => {
+                ripple.remove();
+            }, 600);
+        });
+    </script>
+
+    <style>
+        @keyframes ripple {
+            to {
+                transform: scale(2);
+                opacity: 0;
+            }
+        }
+    </style>
