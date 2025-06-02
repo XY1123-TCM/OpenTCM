@@ -3,117 +3,245 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OpenTCM 聊天机器人</title>
+    <title>Chat with OpenTCM</title>
+    <meta name="description" content="与OpenTCM中医智能助手对话，获取专业的中医知识解答">
+    <meta name="keywords" content="中医问答,智能对话,TCM,中医咨询">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/OpenTCM_favicon.png') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 </head>
 <body>
-    <div class="chat-page-container">
-        <header class="chat-page-header">
-            <img src="{{ url_for('static', filename='images/opentcm_logo.png') }}" alt="OpenTCM Logo" class="chat-logo">
-            <h1>OpenTCM 智能问答</h1>
-            <button onclick="location.href='{{ url_for('welcome') }}'" class="back-button">返回首页</button>
-        </header>
+    <!-- 站点顶栏 -->
+    <div class="site-top-bar">
+        <img src="{{ url_for('static', filename='images/OpenTCM_site_logo.png') }}" 
+             alt="OpenTCM Logo" 
+             class="site-top-logo">
+        <span class="site-top-name">OpenTCM</span>
+    </div>
 
-        <div class="chat-container">
-            <div class="chat-messages" id="chatMessages">
-                <div class="message assistant-message">
-                    您好！我是 OpenTCM 助手，很高兴为您提供中医药相关问题的解答。请问有什么可以帮您的吗？
+    <!-- 聊天页面主体 -->
+    <div class="chat-page-wrapper">
+        <div class="chat-page-container">
+            <!-- 聊天页面头部 -->
+            <header class="chat-page-header">
+                <a href="{{ url_for('welcome') }}" 
+                   class="chat-back-link"
+                   aria-label="返回首页"
+                   title="返回首页">
+                    &#x2190;
+                </a>
+                <h1>OpenTCM 中医智能助手</h1>
+                
+                <!-- 在线状态指示器 -->
+                <div class="status-indicator" style="position: absolute; right: 24px; display: flex; align-items: center; gap: 8px;">
+                    <div class="status-dot" style="width: 8px; height: 8px; background: #10b981; border-radius: 50%; animation: pulse 2s infinite;"></div>
+                    <span style="color: rgba(255,255,255,0.9); font-size: 0.85em;">在线</span>
+                </div>
+            </header>
+
+            <!-- 静态欢迎消息 -->
+            <div class="chat-static-welcome">
+                <div style="display: flex; align-items: flex-start; gap: 12px;">
+                    <div style="width: 36px; height: 36px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 0.9em; flex-shrink: 0;">
+                        中
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600; color: #2d3748; margin-bottom: 8px;">
+                            🌿 欢迎使用OpenTCM中医智能助手
+                        </div>
+                        <div style="line-height: 1.7;">
+                            您好！我是您的专属中医知识顾问，可以为您解答：
+                            <br><br>
+                            <span style="display: inline-block; margin: 4px 8px 4px 0; padding: 4px 12px; background: rgba(102, 126, 234, 0.1); border-radius: 20px; font-size: 0.9em; color: #4c63d2;">🌱 中药材功效</span>
+                            <span style="display: inline-block; margin: 4px 8px 4px 0; padding: 4px 12px; background: rgba(102, 126, 234, 0.1); border-radius: 20px; font-size: 0.9em; color: #4c63d2;">🏥 疾病调理</span>
+                            <span style="display: inline-block; margin: 4px 8px 4px 0; padding: 4px 12px; background: rgba(102, 126, 234, 0.1); border-radius: 20px; font-size: 0.9em; color: #4c63d2;">⚖️ 养生保健</span>
+                            <span style="display: inline-block; margin: 4px 8px 4px 0; padding: 4px 12px; background: rgba(102, 126, 234, 0.1); border-radius: 20px; font-size: 0.9em; color: #4c63d2;">🍵 食疗方案</span>
+                            <br><br>
+                            请随时向我提问，我会尽力为您提供专业、准确的中医知识解答！
+                        </div>
+                    </div>
                 </div>
             </div>
+
+            <!-- 聊天消息区域 -->
+            <div class="chat-messages" id="chatMessages">
+                <!-- 消息将通过JavaScript动态添加到这里 -->
+            </div>
+
+            <!-- 输入提示指示器 -->
+            <div class="typing-indicator" id="typingIndicator">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 0.8em;">
+                        中
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <div style="font-size: 0.85em; color: #6b7280;">OpenTCM 正在思考...</div>
+                        <div class="typing-dots">
+                            <div class="typing-dot"></div>
+                            <div class="typing-dot"></div>
+                            <div class="typing-dot"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 输入区域 -->
             <div class="chat-input-area">
-                <textarea id="userInput" placeholder="在此输入您的问题..." rows="3"></textarea>
-                <button id="sendButton">发送</button>
+                <div style="flex: 1; position: relative;">
+                    <textarea id="userInput" 
+                              placeholder="请输入您的中医相关问题..."
+                              rows="1"
+                              aria-label="输入您的问题"
+                              style="width: 100%; padding-right: 50px;"></textarea>
+                    
+                    <!-- 快捷问题按钮 -->
+                    <div class="quick-questions" id="quickQuestions" style="position: absolute; bottom: 100%; left: 0; right: 0; background: white; border-radius: 16px; box-shadow: 0 -4px 20px rgba(0,0,0,0.1); padding: 16px; margin-bottom: 8px; display: none; border: 1px solid rgba(102, 126, 234, 0.2);">
+                        <div style="font-size: 0.9em; color: #6b7280; margin-bottom: 12px; font-weight: 500;">💡 您可以这样问我：</div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                            <button class="quick-question-btn">人参的功效是什么？</button>
+                            <button class="quick-question-btn">感冒了怎么调理？</button>
+                            <button class="quick-question-btn">如何养护脾胃？</button>
+                            <button class="quick-question-btn">月经不调怎么办？</button>
+                        </div>
+                    </div>
+                    
+                    <!-- 快捷按钮触发器 -->
+                    <button type="button" 
+                            id="quickQuestionsToggle"
+                            style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #667eea; font-size: 1.2em; cursor: pointer; padding: 8px; border-radius: 50%; transition: all 0.3s ease;"
+                            title="查看建议问题"
+                            aria-label="查看快捷问题">
+                        💡
+                    </button>
+                </div>
+                
+                <button id="sendButton" 
+                        aria-label="发送消息"
+                        title="发送消息 (Enter)">
+                    <span id="sendButtonText">发送</span>
+                    <span id="sendButtonIcon" style="margin-left: 8px;">→</span>
+                </button>
             </div>
         </div>
     </div>
 
+    <!-- 页脚 -->
+    <footer class="chat-footer">
+        <p style="font-weight: 500;">&copy; 2024-2025 OpenTCM. All rights reserved.</p>
+        <p style="opacity: 0.8;">Disclaimer: OpenTCM provides TCM knowledge. Consult a healthcare provider for medical advice.</p>
+    </footer>
+
     <script>
-        const chatMessages = document.getElementById('chatMessages');
+        const chatMessagesContainer = document.getElementById('chatMessages');
         const userInput = document.getElementById('userInput');
         const sendButton = document.getElementById('sendButton');
+        const typingIndicator = document.getElementById('typingIndicator');
+        const quickQuestions = document.getElementById('quickQuestions');
+        const quickQuestionsToggle = document.getElementById('quickQuestionsToggle');
 
-        function escapeHtml(unsafe) {
-            if (typeof unsafe !== 'string') {
-                return '';
-            }
-            return unsafe
-                 .replace(/&/g, "&amp;")
-                 .replace(/</g, "&lt;")
-                 .replace(/>/g, "&gt;")
-                 .replace(/"/g, "&quot;")
-                 .replace(/'/g, "&#039;");
-        }
-
-        function appendMessage(text, type, isHtml = false) {
+        // 添加消息到聊天区域
+        function appendMessage(text, type) {
             const messageDiv = document.createElement('div');
             messageDiv.classList.add('message', type);
             
-            if (isHtml) {
-                // 如果确认内容是安全的HTML (例如，来自Markdown转换)
-                // 注意：直接设置innerHTML需要确保来源可靠，防止XSS
-                // messageDiv.innerHTML = text; // 假设text是安全的HTML
-                // 为简单起见，并且如果Kimi返回的是纯文本，还是用textContent
-                 messageDiv.textContent = text; // 默认还是纯文本
-            } else {
-                 messageDiv.textContent = text;
+            const messageContentDiv = document.createElement('div');
+            messageContentDiv.classList.add('message-content');
+            
+            // 为助手消息添加头像
+            if (type === 'assistant-message') {
+                const avatarDiv = document.createElement('div');
+                avatarDiv.style.cssText = `
+                    width: 32px; height: 32px; 
+                    background: linear-gradient(135deg, #667eea, #764ba2); 
+                    border-radius: 50%; 
+                    display: flex; align-items: center; justify-content: center; 
+                    color: white; font-weight: bold; font-size: 0.8em; 
+                    margin-right: 12px; flex-shrink: 0; margin-top: 4px;
+                `;
+                avatarDiv.textContent = '中';
+                messageDiv.appendChild(avatarDiv);
             }
             
-            // 处理换行符：将 \n 替换为 <br>
-            // 这应该在 textContent 设置之后，或者如果用 innerHTML，则在设置前处理好字符串
-            messageDiv.innerHTML = messageDiv.innerHTML.replace(/\n/g, '<br>');
-
-            chatMessages.appendChild(messageDiv);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+            // 处理文本换行和格式化
+            let formattedText = text.replace(/\n/g, '<br>');
+            
+            // 简单的markdown样式处理
+            formattedText = formattedText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            formattedText = formattedText.replace(/\*(.*?)\*/g, '<em>$1</em>');
+            
+            messageContentDiv.innerHTML = formattedText;
+            messageDiv.appendChild(messageContentDiv);
+            chatMessagesContainer.appendChild(messageDiv);
+            
+            // 平滑滚动到底部
+            setTimeout(() => {
+                chatMessagesContainer.scrollTo({
+                    top: chatMessagesContainer.scrollHeight,
+                    behavior: 'smooth'
+                });
+            }, 100);
         }
 
-        function showLoading(isLoading) {
-            let loadingDiv = document.getElementById('loadingIndicator');
+        // 显示/隐藏输入提示
+        function showTyping(isLoading) {
             if (isLoading) {
-                if (!loadingDiv) {
-                    loadingDiv = document.createElement('div');
-                    loadingDiv.id = 'loadingIndicator';
-                    loadingDiv.classList.add('message', 'loading-message');
-                    loadingDiv.textContent = '正在思考中，请稍候...';
-                    chatMessages.appendChild(loadingDiv);
-                    chatMessages.scrollTop = chatMessages.scrollHeight;
-                }
+                typingIndicator.style.display = 'flex';
+                setTimeout(() => {
+                    chatMessagesContainer.scrollTo({
+                        top: chatMessagesContainer.scrollHeight,
+                        behavior: 'smooth'
+                    });
+                }, 100);
             } else {
-                if (loadingDiv) {
-                    loadingDiv.remove();
-                }
+                typingIndicator.style.display = 'none';
             }
         }
 
+        // 更新发送按钮状态
+        function updateSendButton(isSending) {
+            if (isSending) {
+                sendButton.style.background = 'linear-gradient(135deg, #9ca3af, #6b7280)';
+                sendButton.querySelector('#sendButtonText').textContent = '发送中';
+                sendButton.querySelector('#sendButtonIcon').textContent = '⏳';
+            } else {
+                sendButton.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+                sendButton.querySelector('#sendButtonText').textContent = '发送';
+                sendButton.querySelector('#sendButtonIcon').textContent = '→';
+            }
+        }
+
+        // 发送消息函数
         async function sendMessage() {
             const query = userInput.value.trim();
             if (!query) return;
 
+            // 隐藏快捷问题面板
+            quickQuestions.style.display = 'none';
+
             appendMessage(query, 'user-message');
-            userInput.value = ''; // 清空输入框
-            userInput.disabled = true; // 禁用输入框
-            sendButton.disabled = true; // 禁用发送按钮
-            showLoading(true);
+            userInput.value = '';
+            userInput.disabled = true;
+            sendButton.disabled = true;
+            updateSendButton(true);
+            showTyping(true);
 
             try {
                 const response = await fetch('/api/chat', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ query: query }),
                 });
 
-                showLoading(false);
+                showTyping(false);
 
                 if (!response.ok) {
                     let errorMsg = `服务器响应错误: ${response.status}`;
                     try {
                         const errorData = await response.json();
                         errorMsg = errorData.error || JSON.stringify(errorData);
-                    } catch (e) {
-                        // Ignore if response is not JSON
-                    }
-                    appendMessage(`抱歉，出错了: ${errorMsg}`, 'error-message');
+                    } catch (e) { /* Ignore */ }
+                    appendMessage(`⚠️ 抱歉，服务暂时不可用：${errorMsg}`, 'assistant-message error-message');
                     return;
                 }
 
@@ -121,30 +249,117 @@
                 if (data.response) {
                     appendMessage(data.response, 'assistant-message');
                 } else if (data.error) {
-                    appendMessage(`出现错误: ${data.error}`, 'error-message');
+                    appendMessage(`❌ 处理出现问题：${data.error}`, 'assistant-message error-message');
                 } else {
-                    appendMessage('收到未知格式的响应。', 'error-message');
+                    appendMessage('❓ 收到了意外的响应格式，请重试。', 'assistant-message error-message');
                 }
 
             } catch (error) {
-                showLoading(false);
+                showTyping(false);
                 console.error('发送消息失败:', error);
-                appendMessage('网络连接失败或服务器无响应，请检查您的网络连接或稍后再试。', 'error-message');
+                appendMessage('🌐 网络连接失败，请检查网络后重试。', 'assistant-message error-message');
             } finally {
-                userInput.disabled = false; // 重新启用输入框
-                sendButton.disabled = false; // 重新启用发送按钮
+                userInput.disabled = false;
+                sendButton.disabled = false;
+                updateSendButton(false);
+                userInput.style.height = 'auto';
                 userInput.focus();
             }
         }
 
+        // 自动调整输入框高度
+        userInput.addEventListener('input', function () {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+        });
+
+        // 事件监听器
         sendButton.addEventListener('click', sendMessage);
+        
         userInput.addEventListener('keypress', function(event) {
-            if (event.key === 'Enter' && !event.shiftKey) { // Shift+Enter 换行，Enter 发送
-                event.preventDefault(); // 阻止默认的Enter换行行为
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
                 sendMessage();
             }
         });
-        userInput.focus(); // 页面加载后自动聚焦输入框
+
+        // 快捷问题功能
+        quickQuestionsToggle.addEventListener('click', function() {
+            const isVisible = quickQuestions.style.display === 'block';
+            quickQuestions.style.display = isVisible ? 'none' : 'block';
+            this.style.background = isVisible ? 'none' : 'rgba(102, 126, 234, 0.1)';
+        });
+
+        // 快捷问题按钮点击
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('quick-question-btn')) {
+                userInput.value = e.target.textContent;
+                quickQuestions.style.display = 'none';
+                quickQuestionsToggle.style.background = 'none';
+                userInput.focus();
+            }
+        });
+
+        // 点击其他地方隐藏快捷问题
+        document.addEventListener('click', function(e) {
+            if (!quickQuestions.contains(e.target) && e.target !== quickQuestionsToggle) {
+                quickQuestions.style.display = 'none';
+                quickQuestionsToggle.style.background = 'none';
+            }
+        });
+
+        // 页面加载完成后聚焦输入框
+        userInput.focus();
     </script>
+
+    <style>
+        /* 在线状态动画 */
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* 快捷问题按钮样式 */
+        .quick-question-btn {
+            background: rgba(102, 126, 234, 0.1);
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            color: #4c63d2;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .quick-question-btn:hover {
+            background: rgba(102, 126, 234, 0.2);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        }
+
+        /* 快捷问题切换按钮悬停效果 */
+        #quickQuestionsToggle:hover {
+            background: rgba(102, 126, 234, 0.1) !important;
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        /* 消息动画增强 */
+        .message {
+            animation: messageSlideIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes messageSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+    </style>
 </body>
 </html>
