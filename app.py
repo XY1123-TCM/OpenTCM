@@ -27,7 +27,7 @@ CORS(app)
 tcm_app_instance = None
 
 if TCM_RAG_APP_LOADED:
-    csv_path = os.getenv("TCM_KG_CSV_PATH", r"C:\Users\13625\Desktop\OpenTCM_demo\data\tcm_KG.csv")
+    csv_path = os.getenv("TCM_CSV_PATH", r"C:\Users\13625\Desktop\OpenTCM_demo\data\tcm_KG.csv")
     api_key = os.getenv("MOONSHOT_API_KEY")
 
     if not api_key:
