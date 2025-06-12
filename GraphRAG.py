@@ -984,11 +984,11 @@ class TCMGraphRAGApp:
         self.kg.visualize_graph(unique_entities)
 
 def main():
-    csv_path_from_env = os.getenv("TCM_KG_CSV_PATH", "tcm_kg_data_auto.csv") 
+    csv_path_from_env = os.getenv("TCM_CSV_PATH", "tcm_KG.csv") 
 
     if not os.path.exists(csv_path_from_env):
         print(f"错误: 未找到知识图谱CSV文件 '{csv_path_from_env}'。")
-        print("请确保您已运行之前的脚本生成了该文件，或者通过 TCM_KG_CSV_PATH 环境变量指定了正确路径。")
+        print("请确保您已运行之前的脚本生成了该文件，或者通过 TCM_CSV_PATH 环境变量指定了正确路径。")
         
         sample_columns = ['Subject', 'Predicate', 'Object', 'SourceBookName', 'SourceChapterName']
         print(f"如果需要测试，您可以手动创建一个包含 {', '.join(sample_columns)} 列的简单CSV文件。")
