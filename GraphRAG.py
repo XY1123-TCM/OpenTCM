@@ -2,7 +2,7 @@ import os
 import pandas as pd
 import numpy as np
 import networkx as nx
-from typing import List, Dict, Any, Tuple, Optional, Set
+from typing import List, Dict, Any, Tuple, Optional, Set, Iterator
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 import requests
@@ -13,16 +13,16 @@ import time
 
 load_dotenv()
 
-# API config, take kimi for example
+# API 配置, 以 kimi 为例
 MOONSHOT_API_KEY = os.getenv("MOONSHOT_API_KEY")
 MOONSHOT_API_URL = "https://api.moonshot.cn/v1/chat/completions"
 
-# --- Font setup for Matplotlib (if SimHei is available) ---
+# --- Matplotlib 字体设置 (如果 SimHei 可用) ---
 try:
-    plt.rcParams['font.sans-serif'] = ['SimHei']  # Use SimHei for Chinese characters
-    plt.rcParams['axes.unicode_minus'] = False  # Properly display negative signs
+    plt.rcParams['font.sans-serif'] = ['SimHei']  # 使用 SimHei 显示中文
+    plt.rcParams['axes.unicode_minus'] = False  # 正常显示负号
 except Exception as e:
-    print(f"SimHei font not found, Chinese characters in plots might not display correctly: {e}")
+    print(f"未找到 SimHei 字体, 图中的中文可能无法正常显示: {e}")
 
 
 class TCMKnowledgeGraph:
@@ -30,8 +30,8 @@ class TCMKnowledgeGraph:
         self.graph = nx.MultiDiGraph()
         self.triples_with_source = []
         self.relation_types = set()
-        self.entity_types = {} # Placeholder for future entity typing
-        self.treatment_plans_details = {} # Pre-aggregated details for quick lookup
+        self.entity_types = {}  # 为未来实体类型预留
+        self.treatment_plans_details = {}  # 预聚合的详细信息以便快速查找
 
         if csv_path:
             self.load_from_csv(csv_path)
@@ -108,7 +108,7 @@ class TCMKnowledgeGraph:
             
             is_duplicate = any(item["value"] == obj for item in self.treatment_plans_details[subject][predicate])
             if not is_duplicate:
-                 self.treatment_plans_details[subject][predicate].append({"value": obj, "source": source_info_str})
+                self.treatment_plans_details[subject][predicate].append({"value": obj, "source": source_info_str})
 
     def get_entity_relations(self, entity: str, specific_relations: Optional[List[str]] = None) -> List[Tuple[str, str, str, str]]:
         relations = []
@@ -132,7 +132,7 @@ class TCMKnowledgeGraph:
 
                     if pred == "使用药材":
                         if not any(d.get("药材") == obj_val for d in details["组成"]):
-                             details["组成"].append({"药材": obj_val, "剂量": "未知", "来源": source_str})
+                            details["组成"].append({"药材": obj_val, "剂量": "未知", "来源": source_str})
                     elif pred == "制备方法": details["制备方法"].append({"value": obj_val, "source": source_str})
                     elif pred == "备注": details["备注"].append({"value": obj_val, "source": source_str})
                     elif pred == "治疗疾病": details["功能主治"].append({"value": obj_val, "source": source_str}) 
@@ -223,10 +223,10 @@ class TCMKnowledgeGraph:
         return list(set(related_entities))
 
     def find_semantic_paths(self,
-                            start_node: str,
-                            end_node_keywords: List[str],
-                            max_hops: int = 3,
-                            avoid_cycles_in_path_nodes: bool = True
+                           start_node: str,
+                           end_node_keywords: List[str],
+                           max_hops: int = 3,
+                           avoid_cycles_in_path_nodes: bool = True
                            ) -> List[Dict[str, Any]]:
         if start_node not in self.graph:
             return []
@@ -258,7 +258,7 @@ class TCMKnowledgeGraph:
                 sources_set = set(seg["src"] for seg in current_path_segments if seg["src"] and seg["src"] != "未知来源")
                 
                 path_str_parts = []
-                if current_path_segments: # Ensure there are segments to build the visual path
+                if current_path_segments:
                     path_str_parts.append(f"('{current_path_segments[0]['s']}')") 
                     for seg in current_path_segments:
                         p_rel = seg["p"]
@@ -339,11 +339,11 @@ class TCMKnowledgeGraph:
         plt.figure(figsize=figsize)
         try:
             if len(g.nodes()) < 100 :
-                 pos = nx.kamada_kawai_layout(g)
+                pos = nx.kamada_kawai_layout(g)
             else:
-                 pos = nx.spring_layout(g, k=0.25, iterations=30, seed=42) 
+                pos = nx.spring_layout(g, k=0.25, iterations=30, seed=42) 
         except Exception as e_layout:
-            print(f"Layout algorithm failed ({e_layout}), using spring_layout as fallback.")
+            print(f"布局算法失败 ({e_layout}), 使用 spring_layout 作为备选。")
             pos = nx.spring_layout(g, k=0.25, iterations=30, seed=42)
 
         nx.draw_networkx_nodes(g, pos, node_size=350, alpha=0.8, node_color='skyblue', linewidths=0.5) 
@@ -353,7 +353,7 @@ class TCMKnowledgeGraph:
         edge_labels_dict = {}
         for u, v, data in g.edges(data=True):
             if (u,v) not in edge_labels_dict: 
-                 edge_labels_dict[(u,v)] = data.get('relation', '')
+                edge_labels_dict[(u,v)] = data.get('relation', '')
 
         nx.draw_networkx_edge_labels(g, pos, edge_labels=edge_labels_dict, font_size=7, alpha=0.9, bbox=dict(facecolor='white', alpha=0.3, edgecolor='none', pad=0.5))
 
@@ -374,8 +374,8 @@ class GraphRAG:
             return self.llm_cache[cache_key]
 
         if not MOONSHOT_API_KEY or "sk-your" in MOONSHOT_API_KEY: 
-             print("错误: MOONSHOT_API_KEY 未配置或无效。")
-             return "API Key未配置或无效。"
+            print("错误: MOONSHOT_API_KEY 未配置或无效。")
+            return "API Key未配置或无效。"
 
         headers = {
             "Content-Type": "application/json",
@@ -409,9 +409,52 @@ class GraphRAG:
             print(f"调用API失败: {e}")
             return f"调用API时发生错误: {str(e)}"
 
+    def query_moonshot_api_stream(self, prompt: str, temperature: float = 0.3, max_tokens: int = 3000) -> Iterator[str]:
+        """
+        以流式方式调用Moonshot API并逐块返回内容。
+        """
+        if not MOONSHOT_API_KEY or "sk-your" in MOONSHOT_API_KEY:
+            print("错误: MOONSHOT_API_KEY 未配置或无效。")
+            yield "API Key未配置或无效。"
+            return
+
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {MOONSHOT_API_KEY}"
+        }
+        data = {
+            "model": "moonshot-v1-32k",
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+            "stream": True
+        }
+
+        try:
+            with requests.post(MOONSHOT_API_URL, headers=headers, json=data, timeout=180, stream=True) as response:
+                response.raise_for_status()
+                for line in response.iter_lines():
+                    if line:
+                        decoded_line = line.decode('utf-8')
+                        if decoded_line.startswith('data:'):
+                            content = decoded_line[len('data: '):].strip()
+                            if content == '[DONE]':
+                                break
+                            try:
+                                chunk = json.loads(content)
+                                if chunk['choices'][0]['delta'] and 'content' in chunk['choices'][0]['delta']:
+                                    text_chunk = chunk['choices'][0]['delta']['content']
+                                    if text_chunk:
+                                        yield text_chunk
+                            except json.JSONDecodeError:
+                                continue
+        except requests.exceptions.RequestException as e:
+            print(f"流式调用API失败: {e}")
+            yield f"调用API时发生错误: {str(e)}"
+    
     def extract_keywords_and_intent(self, query: str) -> Dict[str, Any]:
         prompt = f"""
-        请分析以下中医相关查询，提取核心实体词（如中药名、症状、疾病名、方剂名等），并判断用户的主要意图。
+        请分析以下中医相关查询，提取核心实体词（如中药名、症状、疾病名、方剂名等），并判断用户主要意图。
         主要意图可以是："查询实体信息"、"寻求治疗方案"、"比较实体"、"解释概念"、"未知"。
         请按JSON格式输出，包含 "keywords" (字符串列表) 和 "intent" (字符串) 两个字段。
 
@@ -446,10 +489,9 @@ class GraphRAG:
             all_matched_initial_entities.extend(matched)
         unique_start_entities = list(set(all_matched_initial_entities))
 
-        # --- MODIFICATION START: Prioritize Disease Details ---
         disease_detail_items = []
         is_disease_query_intent = intent in ["查询实体信息", "解释概念"] or \
-                                  any(disease_kw in query.lower() for disease_kw in ["病", "症", "证", "什么病", "病因", "病机"])
+                                any(disease_kw in query.lower() for disease_kw in ["病", "症", "证", "什么病", "病因", "病机"])
 
 
         if is_disease_query_intent and unique_start_entities:
@@ -469,20 +511,17 @@ class GraphRAG:
                         })
                         processed_entities_for_context.add(entity_name)
         
-        # Add disease details to the main list first if any found
         relevant_knowledge_items.extend(disease_detail_items)
-        # --- MODIFICATION END: Prioritize Disease Details ---
-
 
         candidate_plans_for_details = []
         is_seeking_treatment_intent = (intent == "寻求治疗方案") or \
-                                    any(treat_kw in query.lower() for treat_kw in ["怎么办", "如何治", "用什么药", "治疗方法", "方剂"])
+                                      any(treat_kw in query.lower() for treat_kw in ["怎么办", "如何治", "用什么药", "治疗方法", "方剂"])
 
         if is_seeking_treatment_intent:
             for entity_name in unique_start_entities: 
                 if "治疗方案" in entity_name or "方剂" in entity_name or \
                    entity_name.endswith("汤") or entity_name.endswith("散") or entity_name.endswith("丸"):
-                    if entity_name not in processed_entities_for_context: # Check if not already added as disease detail's subject
+                    if entity_name not in processed_entities_for_context: 
                         candidate_plans_for_details.append(entity_name)
 
             symptom_disease_keywords = [kw for kw in keywords if not ("治疗方案" in kw or "方剂" in kw or kw.endswith("汤") or kw.endswith("散") or kw.endswith("丸"))]
@@ -502,7 +541,9 @@ class GraphRAG:
             
             candidate_plans_for_details = list(set(candidate_plans_for_details)) 
             
-            MAX_PLANS_TO_DETAIL = 2 
+            # --- MODIFICATION: Changed from 2 to 5 ---
+            MAX_PLANS_TO_DETAIL = 5
+            # ----------------------------------------
             detailed_plans_count = 0
             for plan_name in candidate_plans_for_details:
                 if detailed_plans_count >= MAX_PLANS_TO_DETAIL: break
@@ -513,12 +554,14 @@ class GraphRAG:
                         detailed_plans_count += 1
                         processed_entities_for_context.add(plan_name)
         
-        MAX_PATHS_TO_SHOW = 2 
+        # --- MODIFICATION: Changed from 2 to 5 ---
+        MAX_PATHS_TO_SHOW = 5 
+        # ----------------------------------------
         found_multi_hop_paths_details = []
         
         path_end_target_keywords = ["治疗方案", "方剂", "药材", "草药", "汤", "散", "丸"] 
         if "症状" in query.lower() or "疾病" in query.lower(): 
-             path_end_target_keywords.extend(["证候", "病机"]) 
+            path_end_target_keywords.extend(["证候", "病机"]) 
 
         if unique_start_entities: 
             temp_paths_collected = []
@@ -528,8 +571,8 @@ class GraphRAG:
                 is_start_plan_herb = any(ptk.lower() in start_entity.lower() for ptk in ["治疗方案", "方剂", "药材", "草药","汤","散","丸"])
                 
                 current_paths = self.kg.find_semantic_paths(start_entity, 
-                                                            path_end_target_keywords if not is_start_plan_herb else [], 
-                                                            max_hops=3)
+                                                             path_end_target_keywords if not is_start_plan_herb else [], 
+                                                             max_hops=3)
                 temp_paths_collected.extend(current_paths)
                 if len(temp_paths_collected) > MAX_PATHS_TO_SHOW * 2: 
                     break
@@ -538,20 +581,17 @@ class GraphRAG:
             for p_detail in sorted(temp_paths_collected, key=lambda x: (x['hops'], -len(x.get('sources',[])))):
                 if p_detail['path_visual'] not in unique_visual_paths:
                     if p_detail['start_node'] != p_detail['end_node']:
-                         unique_visual_paths[p_detail['path_visual']] = p_detail
+                        unique_visual_paths[p_detail['path_visual']] = p_detail
             
             found_multi_hop_paths_details = list(unique_visual_paths.values())[:MAX_PATHS_TO_SHOW]
 
         if found_multi_hop_paths_details:
-            # Check if path info is already somewhat covered by disease details or plan details to avoid too much redundancy
-            # This is a simple check; more sophisticated overlap detection could be added
             is_new_path_info = True
-            if relevant_knowledge_items: # if there are already items
+            if relevant_knowledge_items: 
                 first_item = relevant_knowledge_items[0]
                 if first_item["type"] in ["疾病详情", "治疗方案"]:
-                    # If the path starts or ends with the entity already detailed, maybe skip or deprioritize
                     if first_item["name"] in [found_multi_hop_paths_details[0]["start_node"], found_multi_hop_paths_details[0]["end_node"]]:
-                        pass # Could set is_new_path_info = False if strict de-duplication is needed
+                        pass 
             
             if is_new_path_info:
                 relevant_knowledge_items.append({
@@ -563,8 +603,8 @@ class GraphRAG:
                     processed_entities_for_context.add(path_info["end_node"])
 
         needs_supplementary_triples = not relevant_knowledge_items or \
-                                      len(relevant_knowledge_items) < 2 or \
-                                      (len(relevant_knowledge_items) == 1 and relevant_knowledge_items[0]["type"] == "相关推导路径" and not relevant_knowledge_items[0].get("paths"))
+                                    len(relevant_knowledge_items) < 2 or \
+                                    (len(relevant_knowledge_items) == 1 and relevant_knowledge_items[0]["type"] == "相关推导路径" and not relevant_knowledge_items[0].get("paths"))
 
 
         if needs_supplementary_triples:
@@ -592,9 +632,8 @@ class GraphRAG:
 
             if basic_triples_context:
                 if not any(item.get("type") == "三元组列表" for item in relevant_knowledge_items):
-                     relevant_knowledge_items.append({"type": "三元组列表", "triples": basic_triples_context})
+                    relevant_knowledge_items.append({"type": "三元组列表", "triples": basic_triples_context})
         
-        # Re-prioritize and select final items
         prioritized_items = []
         temp_disease_details = [item for item in relevant_knowledge_items if item["type"] == "疾病详情"]
         temp_plans = [item for item in relevant_knowledge_items if item["type"] == "治疗方案"]
@@ -608,7 +647,7 @@ class GraphRAG:
         
         final_items_to_format = []
         seen_item_identifiers = set() 
-        MAX_KNOWLEDGE_ITEMS_FINAL = 3 
+        MAX_KNOWLEDGE_ITEMS_FINAL = 5 # Also increase the final items to format
 
         for item in prioritized_items:
             if len(final_items_to_format) >= MAX_KNOWLEDGE_ITEMS_FINAL: break
@@ -623,14 +662,14 @@ class GraphRAG:
             if identifier and identifier not in seen_item_identifiers:
                 final_items_to_format.append(item)
                 seen_item_identifiers.add(identifier)
-            elif not identifier and item not in final_items_to_format: # For items without a clear identifier, add if not identical
+            elif not identifier and item not in final_items_to_format: 
                 final_items_to_format.append(item)
         
         return final_items_to_format
 
 
     def _rank_triples_by_relevance(self, triples_with_source: List[Tuple[str, str, str, str]],
-                                   query: str, keywords: List[str]) -> List[Tuple[str, str, str, str]]:
+                                       query: str, keywords: List[str]) -> List[Tuple[str, str, str, str]]:
         scored_triples = []
         for triple_item in triples_with_source: 
             s, p, o, _ = triple_item 
@@ -660,17 +699,15 @@ class GraphRAG:
     def _format_knowledge_for_llm(self, knowledge_items: List[Dict[str, Any]]) -> str:
         formatted_text = ""
         if not knowledge_items:
-            return "未从知识库中检索到与查询直接相关的详细中医知识。"
+            return "未从知识库中检索到与查询直接相关的详细中医信息。"
 
         item_count = 0
-        MAX_ITEMS_IN_CONTEXT = 3 
-        # Constants for limiting items within each section
-        MAX_DETAILS_PER_SECTION = 3
-        MAX_COMPOSITION_ITEMS = 5
-        MAX_SUB_DETAILS = 2 # For notes, prep methods etc.
-        MAX_PATHS_DISPLAY = 3 
-        MAX_BASIC_TRIPLES_DISPLAY = 3
-
+        MAX_ITEMS_IN_CONTEXT = 8 
+        MAX_DETAILS_PER_SECTION = 5
+        MAX_COMPOSITION_ITEMS = 10
+        MAX_SUB_DETAILS = 5
+        MAX_PATHS_DISPLAY = 5 
+        MAX_BASIC_TRIPLES_DISPLAY = 7
 
         for item in knowledge_items:
             if item_count >= MAX_ITEMS_IN_CONTEXT: break
@@ -684,20 +721,20 @@ class GraphRAG:
                 plan_sources = details.get("来源信息", [])
                 if plan_sources:
                     source_display = plan_sources[0] if len(plan_sources) == 1 else '; '.join(plan_sources[:MAX_DETAILS_PER_SECTION]) 
-                    current_item_text += f"  主要来源: {source_display}\n"
+                    current_item_text += f" 	主要来源: {source_display}\n"
 
                 if details.get("功能主治"):
-                    current_item_text += f"  功能主治:\n"
+                    current_item_text += f" 	功能主治:\n"
                     for val_src_item in details["功能主治"][:MAX_DETAILS_PER_SECTION]: 
                         source_tag = f"(来源: {val_src_item['source']})" if val_src_item.get('source') and val_src_item['source'] != "未知来源" else ""
-                        current_item_text += f"    - {val_src_item['value']} {source_tag}\n".strip() + "\n"
+                        current_item_text += f" 	 	- {val_src_item['value']} {source_tag}\n".strip() + "\n"
                 if details.get("相关症状"):
-                    current_item_text += f"  相关症状:\n"
+                    current_item_text += f" 	相关症状:\n"
                     for val_src_item in details["相关症状"][:MAX_DETAILS_PER_SECTION]:
                         source_tag = f"(来源: {val_src_item['source']})" if val_src_item.get('source') and val_src_item['source'] != "未知来源" else ""
-                        current_item_text += f"    - {val_src_item['value']} {source_tag}\n".strip() + "\n"
+                        current_item_text += f" 	 	- {val_src_item['value']} {source_tag}\n".strip() + "\n"
                 if details.get("组成"):
-                    current_item_text += "  组成:\n"
+                    current_item_text += " 	组成:\n"
                     for comp in details["组成"][:MAX_COMPOSITION_ITEMS]: 
                         herb_name = comp['药材']
                         herb_source_display = f" (药材条目来源: {comp['来源']})" if comp.get('来源') and comp['来源'] != "未知来源" else ""
@@ -719,37 +756,35 @@ class GraphRAG:
                         if dosage_display_parts: 
                             full_dosage_info_str = f" ({', '.join(dosage_display_parts)})"
                             
-                        current_item_text += f"    - {herb_name}{full_dosage_info_str}{herb_source_display}\n".strip() + "\n"
+                        current_item_text += f" 	 	- {herb_name}{full_dosage_info_str}{herb_source_display}\n".strip() + "\n"
                 
                 for detail_key, display_name in [("制备方法", "制备方法"), ("备注", "备注")]:
                     if details.get(detail_key):
-                        current_item_text += f"  {display_name}:\n"
+                        current_item_text += f" 	{display_name}:\n"
                         for val_src_item in details[detail_key][:MAX_SUB_DETAILS]: 
                             source_tag = f"(来源: {val_src_item['source']})" if val_src_item.get('source') and val_src_item['source'] != "未知来源" else ""
-                            current_item_text += f"    - {val_src_item['value']} {source_tag}\n".strip() + "\n"
+                            current_item_text += f" 	 	- {val_src_item['value']} {source_tag}\n".strip() + "\n"
                 current_item_text += "\n"
             
-            # --- NEW FORMATTING for Disease Details ---
             elif item["type"] == "疾病详情":
                 item_count += 1
                 current_item_text += f"【疾病详情 {item_count}: {item.get('name','未知疾病')}】\n"
                 details_triples = item.get("details_triples", [])
                 if not details_triples:
-                    current_item_text += "  未找到该疾病的详细描述信息。\n"
+                    current_item_text += " 	未找到该疾病的详细描述信息。\n"
                 
-                # Group details by predicate for better readability
                 grouped_details = {}
                 for s, p, o, source_str in details_triples:
-                    if s == item.get('name'): # Ensure the detail is about the main disease entity
+                    if s == item.get('name'): 
                         if p not in grouped_details:
                             grouped_details[p] = []
                         grouped_details[p].append({"value": o, "source": source_str})
                 
                 for predicate, detail_list in grouped_details.items():
-                    current_item_text += f"  {predicate}:\n"
-                    for val_src_item in detail_list[:MAX_DETAILS_PER_SECTION]: # Limit details per predicate
+                    current_item_text += f" 	{predicate}:\n"
+                    for val_src_item in detail_list[:MAX_DETAILS_PER_SECTION]: 
                         source_tag = f"(来源: {val_src_item['source']})" if val_src_item.get('source') and val_src_item['source'] != "未知来源" else ""
-                        current_item_text += f"    - {val_src_item['value']} {source_tag}\n".strip() + "\n"
+                        current_item_text += f" 	 	- {val_src_item['value']} {source_tag}\n".strip() + "\n"
                 current_item_text += "\n"
 
             elif item["type"] == "相关推导路径" and item.get("paths"):
@@ -760,7 +795,7 @@ class GraphRAG:
                     path_idx += 1
                     source_tag = f"(综合来源: {'; '.join(path_detail.get('sources',[]))})" if path_detail.get('sources') else ""
                     path_desc = f"路径 {path_idx} (从 '{path_detail.get('start_node','未知起点')}' 到 '{path_detail.get('end_node','未知终点')}', {path_detail.get('hops','未知')}跳): "
-                    current_item_text += f"  {path_desc}{path_detail.get('path_visual','路径描述错误')} {source_tag}\n"
+                    current_item_text += f" 	{path_desc}{path_detail.get('path_visual','路径描述错误')} {source_tag}\n"
                 current_item_text += "\n"
 
             elif item["type"] == "三元组列表" and item.get("triples"):
@@ -768,30 +803,24 @@ class GraphRAG:
                 current_item_text += f"【其他相关知识点 {item_count}】:\n"
                 for s, p, o, source_str in item["triples"][:MAX_BASIC_TRIPLES_DISPLAY]: 
                     source_tag = f"(来源: {source_str})" if source_str and source_str != "未知来源" else ""
-                    current_item_text += f"  - “{s}” {p} “{o}” {source_tag}\n".strip() + "\n"
+                    current_item_text += f" 	- “{s}” {p} “{o}” {source_tag}\n".strip() + "\n"
                 current_item_text += "\n"
             
             if current_item_text: 
-                 formatted_text += current_item_text
-
+                formatted_text += current_item_text
 
         if not formatted_text.strip():
-            return "未从知识库中检索到足够详细的中医知识来回答该问题。" 
+            return "未从知识库中检索到足够详细的中医信息来回答该问题。" 
         return formatted_text.strip()
 
-    def generate_graphrag_response_only(self, query: str, include_context_debug: bool = False) -> Tuple[str, str, List[Dict[str, Any]], Dict[str,Any]]:
-        extracted_info = self.extract_keywords_and_intent(query)
-        relevant_knowledge_items = self.retrieve_relevant_knowledge(query, extracted_info)
-        context_for_llm = self._format_knowledge_for_llm(relevant_knowledge_items)
-        intent = extracted_info.get("intent", "未知")
-
+    def generate_graphrag_response_stream(self, query: str, context_for_llm: str, intent: str) -> Iterator[str]:
         no_kg_context_messages = [
-            "未从知识库中检索到与查询直接相关的详细中医知识。",
-            "未从知识库中检索到足够详细的中医知识来回答该问题。"
+            "未从知识库中检索到与查询直接相关的详细中医信息。",
+            "未从知识库中检索到足够详细的中医信息来回答该问题。"
         ]
-        if context_for_llm.strip() in no_kg_context_messages or not relevant_knowledge_items:
-            response_text = context_for_llm 
-            return response_text, context_for_llm, relevant_knowledge_items, extracted_info
+        if context_for_llm.strip() in no_kg_context_messages:
+            yield context_for_llm
+            return
 
         prompt_template = f"""
         你是一位严谨的中医药文献研究员。请【严格基于】以下提供的“中医知识库上下文”，清晰、准确地回答用户的问题。
@@ -809,27 +838,16 @@ class GraphRAG:
         5.  注意排版，可以使用项目符号使回答更清晰。
         """
         is_seeking_treatment_intent = (intent == "寻求治疗方案") or \
-                                   any(treat_kw in query.lower() for treat_kw in ["怎么办", "如何治", "用什么药", "治疗方法", "方剂"])
+                                      any(treat_kw in query.lower() for treat_kw in ["怎么办", "如何治", "用什么药", "治疗方法", "方剂"])
         if is_seeking_treatment_intent:
             prompt_template += """
         [关于治疗方案的额外指示]：如果上下文中提到了与用户问题相关的治疗方案，请详细说明其【名称、主要功能主治、组成药材（及剂量，若有）、制备方法/备注（若有）】，并务必标注各项信息的来源。如果提供了相关知识路径，也请清晰地阐述。
             """
         prompt_template += "\n请给出你的回答："
         
-        response_text = self.query_moonshot_api(prompt_template, temperature=0.1, max_tokens=2000)
+        yield from self.query_moonshot_api_stream(prompt_template, temperature=0.1, max_tokens=2000)
 
-        if include_context_debug: 
-            debug_output = (
-                f"---DEBUG: GraphRAG Context Generation---\n"
-                f"意图：{intent}\n关键词：{extracted_info.get('keywords')}\n"
-                f"检索到的知识项数量：{len(relevant_knowledge_items)}\n"
-                f"---CONTEXT FOR GraphRAG-LLM---\n{context_for_llm}\n"
-            )
-            print(debug_output)
-        
-        return response_text, context_for_llm, relevant_knowledge_items, extracted_info
-
-    def get_general_kimi_response(self, query: str, temperature: float = 0.5, max_tokens: int = 2048) -> str:
+    def get_general_kimi_response_stream(self, query: str, temperature: float = 0.5, max_tokens: int = 2048) -> Iterator[str]:
         prompt = f"""
         你是一位知识渊博且资深的中医专家。请针对以下用户提出的问题，提供一个全面、详细、且结构清晰的解答。
         请根据具体问题（药物/病症查询、功能/作用等）尽可能从不同方面（例如：定义、病因病机、主要类型、常见症状、诊断要点、治疗原则、常用方药举例、预后转归、生活调理及注意事项等，根据问题类型酌情选择）且有重点地进行阐述。
@@ -839,15 +857,14 @@ class GraphRAG:
 
         你的专业解答：
         """
-        return self.query_moonshot_api(prompt, temperature=temperature, max_tokens=max_tokens)
+        yield from self.query_moonshot_api_stream(prompt, temperature=temperature, max_tokens=max_tokens)
     
     def synthesize_responses(self, query: str, graphrag_response: str, general_response: str,
-                             temperature: float = 0.3, max_tokens: int = 3000) -> str:
-
+                             temperature: float = 0.3, max_tokens: int = 3000) -> Iterator[str]:
         is_graphrag_valid = not any(
             msg in graphrag_response for msg in [
-                "未从知识库中检索到与查询直接相关的详细中医知识。",
-                "未从知识库中检索到足够详细的中医知识来回答该问题。",
+                "未从知识库中检索到与查询直接相关的详细中医信息。",
+                "未从知识库中检索到足够详细的中医信息来回答该问题。",
                 "API Key未配置或无效。", 
                 "API请求失败",
                 "API响应错误"
@@ -887,7 +904,7 @@ class GraphRAG:
 
         请基于以上所有指示，以专业的判断和高超的编辑技巧，输出整合后的【最终专业答案】：
         """
-        return self.query_moonshot_api(synthesis_prompt, temperature=temperature, max_tokens=max_tokens)
+        return self.query_moonshot_api_stream(synthesis_prompt, temperature=temperature, max_tokens=max_tokens)
 
 class TCMGraphRAGApp:
     def __init__(self, csv_path: str):
@@ -902,7 +919,6 @@ class TCMGraphRAGApp:
         print("=" * 80)
         print(" 中医智能问答系统 (输入'退出'结束对话)")
         print(" 输入 '可视化:您的问题' 或 'viz:您的问题' 来尝试可视化相关子图")
-        print(" 输入 'debug:您的问题' 来查看详细的GraphRAG上下文（仅调试用）")
         print("=" * 80)
         while True:
             raw_query = input("\n请输入您的问题: ").strip()
@@ -912,7 +928,6 @@ class TCMGraphRAGApp:
                 print("感谢使用，再见！")
                 break
             
-            include_debug_context = False
             query_to_process = raw_query
             action = "query" 
 
@@ -925,16 +940,12 @@ class TCMGraphRAGApp:
                 else:
                     print("请输入要可视化的查询内容。例如：可视化:头痛怎么办")
                     continue
-            elif raw_query.lower().startswith("debug:"):
-                include_debug_context = True
-                query_to_process = raw_query[len("debug:"):].strip()
-                print("--- 调试模式开启 (将显示GraphRAG的内部上下文) ---")
-
+            
             if not query_to_process: 
                 print("请输入有效的问题。")
                 continue
 
-            print("\n正在思考中，请稍候...")
+            print("\n" + "="*25 + " 系统开始思考 " + "="*25)
             start_time = time.time()
             
             if action == "visualize":
@@ -943,26 +954,48 @@ class TCMGraphRAGApp:
                 print("--- 可视化完成 ---") 
                 continue 
             
-            final_answer = self.query(query_to_process, include_context_debug=include_debug_context)
+            print("\n【第一步：分析您的问题...】")
+            print("-" * 70)
+            extracted_info = self.rag.extract_keywords_and_intent(query_to_process)
+            print(f"  - 意图: {extracted_info.get('intent', '未知')}")
+            print(f"  - 关键词: {extracted_info.get('keywords', [])}")
+            print("-" * 70)
+
+            print("\n【第二步：基于中医知识图谱生成回答...】")
+            print("-" * 70)
+            relevant_knowledge_items = self.rag.retrieve_relevant_knowledge(query_to_process, extracted_info)
+            context_for_llm = self.rag._format_knowledge_for_llm(relevant_knowledge_items)
+            
+            graphrag_stream = self.rag.generate_graphrag_response_stream(query_to_process, context_for_llm, extracted_info.get('intent', '未知'))
+            graphrag_response_chunks = []
+            for chunk in graphrag_stream:
+                print(chunk, end='', flush=True)
+                graphrag_response_chunks.append(chunk)
+            graphrag_response = "".join(graphrag_response_chunks)
+            print("\n" + "-" * 70)
+
+            print("\n【第三步：通用大模型进行中医知识补充...】")
+            print("-" * 70)
+            general_stream = self.rag.get_general_kimi_response_stream(query_to_process)
+            general_response_chunks = []
+            for chunk in general_stream:
+                print(chunk, end='', flush=True)
+                general_response_chunks.append(chunk)
+            general_response = "".join(general_response_chunks)
+            print("\n" + "-" * 70)
+
+            print("\n【第四步：融合以上信息，形成最终专业答案...】")
+            print("-" * 70)
+            final_answer_stream = self.rag.synthesize_responses(query_to_process, graphrag_response, general_response)
+            
+            for chunk in final_answer_stream:
+                print(chunk, end='', flush=True)
             
             end_time = time.time()
-
-            print(f"\n💡 智能助手 (用时 {end_time - start_time:.2f}秒):")
+            print(f"\n(总用时 {end_time - start_time:.2f}秒)")
             print("-" * 70)
-            print(final_answer)
-            print("-" * 70)
+            print("="*26 + " 思考结束 " + "="*27 + "\n")
 
-    def query(self, text: str, include_context_debug: bool = False) -> str:
-        graphrag_response, kg_context_str, kg_items, extracted_info = self.rag.generate_graphrag_response_only(text, include_context_debug=include_context_debug)
-        
-        if include_context_debug: 
-            print(f"\n--- [App Debug] GraphRAG原始回答 (传给综合模块前) ---\n{graphrag_response}")
-
-        general_response = self.rag.get_general_kimi_response(text)
-        final_response = self.rag.synthesize_responses(text, graphrag_response, general_response)
-        
-        return final_response
-    
     def visualize_knowledge_for_query(self, query: str):
         extracted_info = self.rag.extract_keywords_and_intent(query)
         keywords = extracted_info.get("keywords", [])
@@ -993,9 +1026,9 @@ def main():
         sample_columns = ['Subject', 'Predicate', 'Object', 'SourceBookName', 'SourceChapterName']
         print(f"如果需要测试，您可以手动创建一个包含 {', '.join(sample_columns)} 列的简单CSV文件。")
 
-        use_sample_data = input(f"是否创建一个演示用的示例CSV文件 '{csv_path_from_env}' (yes/no)? ").strip().lower()
+        use_sample_data = input(f"是否创建一个演示用的范例CSV文件 '{csv_path_from_env}' (yes/no)? ").strip().lower()
         if use_sample_data == 'yes':
-            print(f"正在创建一个示例CSV文件 '{csv_path_from_env}' 用于演示...")
+            print(f"正在创建一个范例CSV文件 '{csv_path_from_env}' 用于演示...")
             sample_data = {
                 'Subject': [
                     '治疗方案_逍遥散', '治疗方案_逍遥散', '治疗方案_逍遥散', '柴胡', '当归', '白芍', '乳腺增生', '肝气郁结',
@@ -1024,9 +1057,9 @@ def main():
                 if output_dir and not os.path.exists(output_dir):
                     os.makedirs(output_dir)
                 sample_df.to_csv(csv_path_from_env, index=False, encoding='utf-8-sig')
-                print(f"示例CSV文件 '{csv_path_from_env}' 已创建。请用您的实际数据替换它以获得最佳效果。")
+                print(f"范例CSV文件 '{csv_path_from_env}' 已创建。请用您的实际数据替换它以获得最佳效果。")
             except Exception as e_csv:
-                print(f"创建示例文件失败: {e_csv}")
+                print(f"创建范例文件失败: {e_csv}")
                 return
         else:
             print("程序将退出，因为缺少必要的输入文件。")
