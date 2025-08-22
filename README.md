@@ -2,7 +2,7 @@
 
 OpenTCM is a web application for Traditional Chinese Medicine (TCM) intelligent question answering, built upon a knowledge graph and a Large Language Model (LLM, using Kimi as an example). It aims to combine structured TCM knowledge with the understanding and generation capabilities of LLMs to provide users with well-sourced, comprehensive, and easy-to-understand TCM information. This project supports streaming responses to enhance user interaction experience.
 
-Our paper "OpenTCM: A GraphRAG-Empowered LLM-based System for Traditional Chinese Medicine Knowledge Retrieval and Diagnosis" is accepted by BIGCOM25.
+Our paper "OpenTCM: A GraphRAG-Empowered LLM-based System for Traditional Chinese Medicine Knowledge Retrieval and Diagnosis" is accepted by BIGCOM25 (Best Paper Award).
 
 The code of OpenTCM will be released by this conference.
 
